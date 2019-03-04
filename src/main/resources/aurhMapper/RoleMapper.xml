@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.allmsi.auth.dao.RoleMapper">
+	<resultMap id="BaseResultMap"
+		type="com.allmsi.auth.model.po.Role">
+		<id column="id" property="id" jdbcType="VARCHAR" />
+		<result column="roleName" property="roleName"
+			jdbcType="VARCHAR" />
+		<result column="cUserId" property="cUserId" jdbcType="VARCHAR" />
+		<result column="uUserId" property="uUserId" jdbcType="VARCHAR" />
+		<result column="cTime" property="cTime" jdbcType="TIMESTAMP" />
+		<result column="uTime" property="uTime" jdbcType="TIMESTAMP" />
+		<result column="del" property="del" jdbcType="INTEGER" />
+		<result column="systemId" property="systemId"
+			jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, roleName, cUserId, uUserId, cTime,uTime, del,systemId
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select
+		<include refid="Base_Column_List" />
+		from im_ta_role
+		where id = #{id,jdbcType=VARCHAR}
+	</select>
+	<select id="listRoleByUserId" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select r.id,r.roleName,systemId 
+		from im_ta_role r 
+		left join im_ta_user_role ur on r.id = ur.roleId
+		where r.del = 0 and ur.userId = #{_parameter,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="listRoleByMap" resultMap="BaseResultMap"
+		parameterType="java.util.Map">
+		select r.id,r.roleName,r.systemId from im_ta_user u
+		left join im_ta_user_role ur on u.id = ur.userId
+		left join im_ta_role r on ur.roleId = r.id
+		where r.del = 0
+		<if test="userId != null and userId != '' ">
+			and u.id = #{userId,jdbcType=VARCHAR}
+		</if>
+		<if test="sysId != null and sysId != '' ">
+			and r.systemId = #{sysId,jdbcType=VARCHAR}
+		</if>
+
+	</select>
+	<select id="listRoles" resultMap="BaseResultMap"
+		parameterType="java.util.List">
+		select r.id,r.roleName
+		from im_ta_role r
+		where
+		r.del=0 AND r.id in
+		<foreach collection="list" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+</mapper>

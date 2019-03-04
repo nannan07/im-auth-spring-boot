@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.allmsi.auth.dao.UserRoleMapper">
+	<resultMap id="BaseResultMap" type="com.allmsi.auth.model.po.UserRole">
+		<id column="id" property="id" jdbcType="VARCHAR" />
+		<result column="userId" property="userId" jdbcType="VARCHAR" />
+		<result column="roleId" property="roleId" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, userId, roleId
+	</sql>
+	<insert id="insertSelective" parameterType="com.allmsi.auth.model.po.UserRole">
+		insert into im_ta_user_role
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="userId != null">
+				userId,
+			</if>
+			<if test="roleId != null">
+				roleId,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="userId != null">
+				#{userId,jdbcType=VARCHAR},
+			</if>
+			<if test="roleId != null">
+				#{roleId,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<insert id="insertBatch" parameterType="java.util.List">
+		insert into im_ta_user_role (id, userId, roleId)
+		values
+		<foreach collection="list" item="item" index="index"
+			separator=",">
+			(#{item.id}, #{item.userId}, #{item.roleId})
+		</foreach>
+	</insert>
+	<delete id="deleteUser" parameterType="java.lang.String">
+		delete from
+		im_ta_user_role
+		where userId = #{userId,jdbcType=VARCHAR}
+	</delete>
+	<delete id="deleteRole" parameterType="java.lang.String">
+		delete from
+		im_ta_user_role
+		where roleId = #{roleId,jdbcType=VARCHAR}
+	</delete>
+	<update id="transferRole" parameterType="java.util.Map">
+		update im_ta_user_role set userId = #{agent}
+		where userId = #{principal}
+	</update>
+</mapper>

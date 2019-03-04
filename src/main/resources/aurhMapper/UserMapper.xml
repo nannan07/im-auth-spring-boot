@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.allmsi.auth.dao.UserMapper">
+	<resultMap id="BaseResultMap"
+		type="com.allmsi.auth.model.po.User">
+		<id column="id" property="id" jdbcType="VARCHAR" />
+		<result column="loginName" property="loginName"
+			jdbcType="VARCHAR" />
+		<result column="userName" property="userName"
+			jdbcType="VARCHAR" />
+		<result column="pwd" property="password" jdbcType="VARCHAR" />
+		<result column="phone" property="phone" jdbcType="VARCHAR" />
+		<result column="email" property="email" jdbcType="VARCHAR" />
+		<result column="sex" property="sex" jdbcType="INTEGER" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="cUserId" property="cUserId" jdbcType="VARCHAR" />
+		<result column="uUserId" property="uUserId" jdbcType="VARCHAR" />
+		<result column="cTime" property="cTime" jdbcType="TIMESTAMP" />
+		<result column="uTime" property="uTime" jdbcType="TIMESTAMP" />
+		<result column="del" property="del" jdbcType="INTEGER" />
+		<result column="dingUserId" property="dingUserId"
+			jdbcType="VARCHAR" />
+		<result column="orgEmail" property="orgEmail"
+			jdbcType="VARCHAR" />
+
+		<result column="roleId" property="roleId" jdbcType="VARCHAR" />
+		<result column="roleName" property="roleName"
+			jdbcType="VARCHAR" />
+		<result column="deptId" property="deptId" jdbcType="VARCHAR" />
+		<result column="deptName" property="deptName"
+			jdbcType="VARCHAR" />
+		<result column="udType" property="udType" jdbcType="VARCHAR" />
+		<result column="systemId" property="systemId"
+			jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, userName, pwd, phone, email, sex, sort,
+		cUserId,uUserId,cTime, uTime, del
+	</sql>
+	<sql id="Simple_Column_List">
+		u.id,u.loginName, u.userName, u.phone, u.email, u.sex,
+		u.sort, u.cTime
+	</sql>
+	<sql id="Role_Column_List">
+		r.id as roleId
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select id, userName, phone, email, sex, sort, cTime
+		from im_ta_user
+		where del = 0 and id = #{id,jdbcType=VARCHAR}
+	</select>
+	<select id="listUser" resultMap="BaseResultMap"
+		parameterType="java.util.Map">
+		select
+		<include refid="Simple_Column_List" />
+		from im_ta_user u
+		where u.del = 0
+		<trim prefix="and (" suffix=")" suffixOverrides="or">
+			<if test="userName != null and userName != '' ">
+				u.userName like CONCAT('%', #{userName}, '%') or
+			</if>
+			<if test="phone != null and phone != '' ">
+				u.phone = #{phone,jdbcType=VARCHAR} or
+			</if>
+			<if test="email != null and email != '' ">
+				u.email = #{email,jdbcType=VARCHAR} or
+			</if>
+		</trim>
+		order by u.sort, u.cTime DESC
+	</select>
+	<select id="listUserByDeptId" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select u.*,a.deptName
+		from im_ta_user u
+		left join ( 
+			select ud.deptId,d.deptName,ud.userId from im_ta_dept d 
+			LEFT JOIN im_ta_user_dept ud ON d.del=0 AND ud.deptId = d.id
+		) a ON u.id = a.userId
+		where u.del=0 AND a.deptId=#{deptId,jdbcType=VARCHAR}
+		order by u.sort,u.cTime DESC
+	</select>
+	<select id="listUserByRoleId" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select u.*,ur.roleId,a.deptId,
+		if(u.id='01302000167471','CEO',a.deptName) as deptName from im_ta_user
+		u
+		left join im_ta_user_role ur on ur.userId=u.id
+		LEFT JOIN (
+			select ud.deptId,d.deptName,ud.userId from im_ta_dept d
+			LEFT JOIN im_ta_user_dept ud ON d.del=0 AND ud.deptId = d.id
+		) a ON u.id = a.userId
+		where u.del=0 AND ur.roleId= #{roleId,jdbcType=VARCHAR}
+		order by u.sort,u.cTime DESC
+	</select>
+	<select id="listUsers" resultMap="BaseResultMap"
+		parameterType="java.util.List">
+		select ud.deptId,d.deptName,u.id,u.userName,u.sort 
+		from im_ta_user_dept ud
+		RIGHT JOIN im_ta_user u ON ud.userId = u.id AND u.del = 0 and
+		ud.udType = "01"
+		LEFT JOIN im_ta_dept d ON ud.deptId = d.id AND d.del = 0
+		where u.id in
+		<foreach collection="list" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by u.sort
+	</select>
+	<select id="verifyLogin" resultMap="BaseResultMap"
+		parameterType="com.allmsi.auth.model.po.User">
+		select u.id, u.userName, u.phone, u.email, u.sex,
+		u.sort, u.loginName
+		from im_ta_user u
+		where u.del=0 and (u.loginName =
+		#{loginName,jdbcType=VARCHAR} and u.loginName is not null
+		or u.phone =
+		#{loginName,jdbcType=VARCHAR}
+		or u.email =
+		#{loginName,jdbcType=VARCHAR})
+		and u.pwd = #{password,jdbcType=VARCHAR}
+	</select>
+	<select id="listDeptUsers" resultMap="BaseResultMap"
+		parameterType="java.util.List">
+		select u.id, u.userName,u.sort,a.deptName,a.deptId,a.udType
+		from im_ta_user u
+		left join (
+			select ud.deptId,ud.userId,d.deptName,ud.udType 
+			from im_ta_dept d
+			inner join im_ta_user_dept ud on d.id = ud.deptId and ud.udType='01'
+		) a
+			on u.id = a.userId
+			where u.del=0 AND a.deptId in
+		<foreach collection="list" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by u.sort
+	</select>
+	<select id="listByRolesAndDepts" resultMap="BaseResultMap"
+		parameterType="java.util.Map">
+		SELECT DISTINCT u.id,u.loginName,u.userName,u.phone,u.email,
+		u.sex,u.sort
+		FROM im_ta_user u
+		<if test="roleIds != null and roleIds != '' ">
+			INNER JOIN im_ta_user_role ur ON u.id = ur.userId
+		</if>
+		<if test="deptIds != null and deptIds != '' ">
+			INNER JOIN im_ta_user_dept ud ON u.id = ud.userId
+		</if>
+		WHERE u.del = 0
+		<if test="roleIds != null and roleIds != '' ">
+			<!-- AND INSTR( #{roleIds},ur.roleId) -->
+			AND INSTR(CONCAT(',',#{roleIds},','),CONCAT(',',ur.roleId,','))
+		</if>
+		<if test="deptIds != null and deptIds != '' ">
+			<!-- AND INSTR(#{deptIds},ud.deptId) -->
+			AND INSTR(CONCAT(',',#{deptIds},','),CONCAT(',',ud.deptId,','))
+		</if>
+		order by u.sort
+	</select>
+</mapper>
